@@ -1,0 +1,33 @@
+version: '3.9'
+
+services:
+  web: 
+    image: nginx:latest
+    ports:
+      - '8080:80'
+    volumes:
+      - ./src:/var/www/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    links:
+      - php-fpm
+      - mysql
+  php-fpm:
+    image: php:8-fpm
+    volumes:
+      - ./src:/var/www/html
+  mysql:
+    image: mysql:8.0.26
+    container_name: mysql
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "9906:3306"
+    environment:
+      MYSQL_DATABASE: feedservice
+      MYSQL_USER: user
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - ./mysql:/var/lib/mysql

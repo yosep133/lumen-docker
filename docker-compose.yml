@@ -1,0 +1,69 @@
+version: '3.8'
+services:
+  nginx:
+    container_name: nginx
+    build: ./nginx
+    command: nginx -g "daemon off;"
+    links:
+      - php
+    ports:
+      - "8083:80"
+    volumes:
+      - ./nginx/logs:/var/log/nginx
+      - ./src:/var/www/html
+    # extra_hosts:
+    #   - "host.docker.internal:127.0.0.1"
+
+  php:
+    container_name: php
+    build: ./php
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./src/:/var/www/html
+    working_dir: /var/www/html
+    
+  mysql:
+    image: mysql:8.0.26
+    container_name: mysql
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: feedservice
+      MYSQL_USER: user
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - ./mysql:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: pma
+    links:
+      - mysql
+    environment:
+      - PMA_HOST:mysql
+      - PMA_PORT:3306
+      - PMA_ARBITRARY:1
+    restart: always
+    ports:
+      - 8085:80
+  
+  queue:
+    image: php
+    container_name: queue
+    working_dir: /var/www/html
+    command: php artisan queue:work
+    depends_on:
+      - php
+    volumes:
+      - ./src:/var/www/html
+    entrypoint: php /var/www/html queue:work
+  
+networks:
+  host:
+    external: true
