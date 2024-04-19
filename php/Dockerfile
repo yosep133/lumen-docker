@@ -75,3 +75,16 @@ RUN docker-php-ext-enable oci8
 # RUN mv composer.phar /usr/local/bin/composer
 # RUN composer -V
 # RUN composer install
+
+# if downgrade version openssl 
+RUN cd /usr/local/src
+RUN curl https://www.openssl.org/source/old/1.0.1/openssl-1.0.1k.tar.gz --output /usr/local/src/openssl-1.0.1k.tar.gz
+RUN tar -xvf /usr/local/src/openssl-1.0.1k.tar.gz
+RUN cd /usr/local/src/openssl-1.0.1k
+RUN ./config --prefix=/usr/local/ --openssldir=/usr/local/openssl
+RUN make
+RUN make test
+RUN make install
+RUN mv /usr/bin/openssl /usr/bin/openssl-bak
+RUN cp -r /usr/local/openssl /usr/bin
+RUN ls -ld /usr/bin/openssl
