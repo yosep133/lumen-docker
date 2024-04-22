@@ -47,6 +47,11 @@ ENV composer_hash 544e09ee996cdf60ece3804abc52599c22b1f40f4323403c44d44fdfdd5864
 
 # CMD [ "php -S 0.0.0:8087 -t public" ]
 
+WORKDIR /var/www/html
+RUN cd "/var/www/html"
+RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && php composer-setup.php — install-dir=/usr/local/bin — filename=composer && php -r "unlink('composer-setup.php');"
+RUN cp composer.phar /usr/local/bin/composer
+RUN composer install 
 
 
 ADD instantclient-basic-linux.x64-11.2.0.4.0.zip /tmp/
