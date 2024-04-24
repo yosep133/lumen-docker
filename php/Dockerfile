@@ -22,8 +22,8 @@ ENV ACCEPT_EULA=Y
 RUN apt-get update
 RUN apt-get install -y unixodbc-dev 
 RUN apt-get install -y unixodbc 
-RUN apt-get install -y msodbcsql18
-RUN apt-get install -y mssql-tools18
+RUN apt-get install -y msodbcsql17
+RUN apt-get install -y mssql-tools
 RUN apt-get install -y libgssapi-krb5-2
 
 RUN docker-php-ext-install pdo pdo_mysql mysqli
@@ -47,12 +47,6 @@ ENV composer_hash 544e09ee996cdf60ece3804abc52599c22b1f40f4323403c44d44fdfdd5864
 
 # CMD [ "php -S 0.0.0:8087 -t public" ]
 
-WORKDIR /var/www/html
-RUN cd "/var/www/html"
-RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && php composer-setup.php — install-dir=/usr/local/bin — filename=composer && php -r "unlink('composer-setup.php');"
-RUN cp composer.phar /usr/local/bin/composer
-RUN composer install 
-
 
 ADD instantclient-basic-linux.x64-11.2.0.4.0.zip /tmp/
 ADD instantclient-sdk-linux.x64-11.2.0.4.0.zip /tmp/
@@ -72,24 +66,35 @@ RUN docker-php-ext-enable oci8
 # Composer
 # WORKDIR /var/www/html
 # RUN cd "/var/www/html"
+# # COPY /src /var/www/html
 # CMD [ "php -S 0.0.0:8087 -t public" ]
 # RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-# RUN php -r "if (hash_file('SHA384', 'composer-setup.php') === '544e09ee996cdf60ece3804abc52599c22b1f40f4323403c44d44fdfdd586475ca9813a858088ffbc1f233e9b180f061') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+# # RUN php -r "if (hash_file('SHA384', 'composer-setup.php') === '544e09ee996cdf60ece3804abc52599c22b1f40f4323403c44d44fdfdd586475ca9813a858088ffbc1f233e9b180f061') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
 # RUN php composer-setup.php
 # RUN php -r "unlink('composer-setup.php');"
 # RUN mv composer.phar /usr/local/bin/composer
 # RUN composer -V
 # RUN composer install
 
+# WORKDIR /var/www/html
+# RUN cd "/var/www/html"
+# RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && php composer-setup.php — install-dir=/usr/local/bin — filename=composer && php -r "unlink('composer-setup.php');"
+# RUN cp composer.phar /usr/local/bin/composer
+# RUN composer install 
+
 # if downgrade version openssl 
-RUN cd /usr/local/src
-RUN curl https://www.openssl.org/source/old/1.0.1/openssl-1.0.1k.tar.gz --output /usr/local/src/openssl-1.0.1k.tar.gz
-RUN tar -xvf /usr/local/src/openssl-1.0.1k.tar.gz
-RUN cd /usr/local/src/openssl-1.0.1k
-RUN ./config --prefix=/usr/local/ --openssldir=/usr/local/openssl
-RUN make
-RUN make test
-RUN make install
-RUN mv /usr/bin/openssl /usr/bin/openssl-bak
-RUN cp -r /usr/local/openssl /usr/bin
-RUN ls -ld /usr/bin/openssl
+# WORKDIR /usr/local/src
+# # RUN cd /usr/local/src
+# RUN curl https://www.openssl.org/source/old/1.0.1/openssl-1.0.1k.tar.gz --output /usr/local/src/openssl-1.0.1k.tar.gz
+# RUN tar -xvf /usr/local/src/openssl-1.0.1k.tar.gz
+# # RUN cd /usr/local/src/openssl-1.0.1k
+# WORKDIR /usr/local/src/openssl-1.0.1k
+# RUN ./config --prefix=/usr/local/ --openssldir=/usr/local/openssl
+# RUN make
+# RUN make test
+# RUN make install
+# RUN mv /usr/bin/openssl /usr/bin/openssl-bak
+# RUN cp -r /usr/local/openssl /usr/bin
+# RUN ls -ld /usr/bin/openssl
+
+COPY openssl.cnf /etc/ssl/openssl.cnf

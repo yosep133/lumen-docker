@@ -57,12 +57,13 @@ services:
     image: php
     container_name: queue
     working_dir: /var/www/html
+    restart: always
     command: php artisan queue:work
     depends_on:
       - php
     volumes:
       - ./src:/var/www/html
-    entrypoint: php /var/www/html queue:work
+    # entrypoint: php /var/www/html queue:work
   
 networks:
   host:
