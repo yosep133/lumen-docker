@@ -29,16 +29,19 @@ services:
     restart: unless-stopped
     tty: true
     ports:
-      - "3306:3306"
+      - "6609:3306"
     environment:
       MYSQL_DATABASE: feedservice
       MYSQL_USER: user
       MYSQL_PASSWORD: secret
       MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_HOST: "%"
       SERVICE_TAGS: dev
       SERVICE_NAME: mysql
     volumes:
       - ./mysql:/var/lib/mysql
+      - ./mysql/dfeedservice.sql:/docker-entrypoint-initdb.d/1.sql
+      - ./mysql/ditms.sql:/docker-entrypoint-initdb.d/2.sql
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
@@ -46,12 +49,12 @@ services:
     links:
       - mysql
     environment:
-      - PMA_HOST:mysql
-      - PMA_PORT:3306
-      - PMA_ARBITRARY:1
+      PMA_HOST : mysql
+      PMA_PORT: 6609
+      PMA_ARBITRARY: 1
     restart: always
     ports:
-      - 8085:80
+      - "8085:80"
   
   queue:
     image: php

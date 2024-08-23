@@ -1,5 +1,7 @@
 /src/*
 /nginx/logs/*
-/mysql/
+/mysql/*
 !/mysql/setup.sh
 !/mysql/setup.sql
+!/mysql/dfeedservice.sql
+!/mysql/ditms.sql
