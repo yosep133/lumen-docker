@@ -62,6 +62,7 @@ RUN echo 'instantclient,/usr/local/instantclient' | pecl install oci8
 RUN docker-php-ext-configure pdo_oci --with-pdo-oci=instantclient,/usr/local/instantclient
 RUN docker-php-ext-install pdo_oci
 RUN docker-php-ext-enable oci8
+RUN docker-php-ext-install sockets
 
 # Composer
 # WORKDIR /var/www/html
@@ -76,10 +77,11 @@ RUN docker-php-ext-enable oci8
 # RUN composer -V
 # RUN composer install
 
+# COPY /src/feed/ /var/www/html/
 # WORKDIR /var/www/html
 # RUN cd "/var/www/html"
-# RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && php composer-setup.php — install-dir=/usr/local/bin — filename=composer && php -r "unlink('composer-setup.php');"
-# RUN cp composer.phar /usr/local/bin/composer
+RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && php composer-setup.php — install-dir=/usr/local/bin — filename=composer && php -r "unlink('composer-setup.php');"
+RUN cp composer.phar /usr/local/bin/composer
 # RUN composer install 
 
 # if downgrade version openssl 

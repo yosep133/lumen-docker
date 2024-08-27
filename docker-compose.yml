@@ -32,7 +32,8 @@ services:
       - "9002:9000"
     volumes:
       - ./src/itms/:/var/www/html/itms
-    working_dir: /var/www/html/itms
+    # working_dir: /var/www/html/itms
+    # command: composer update && install 
   
   php_feed:
     container_name: php_feed
@@ -41,7 +42,8 @@ services:
       - "9001:9000"
     volumes:
       - ./src/feed/:/var/www/html/feed
-    working_dir: /var/www/html/feed
+    # working_dir: /var/www/html/feed
+    # command: composer update && install
 
   mysql:
     image: mysql:8.0.26
@@ -59,7 +61,7 @@ services:
       SERVICE_TAGS: dev
       SERVICE_NAME: mysql
     volumes:
-      - ./mysql:/var/lib/mysql
+      - ./mysql/var/:/var/lib/mysql
       - ./mysql/dfeedservice.sql:/docker-entrypoint-initdb.d/1.sql
       - ./mysql/ditms.sql:/docker-entrypoint-initdb.d/2.sql
 
@@ -79,15 +81,43 @@ services:
   queue:
     image: php
     container_name: queue
-    working_dir: /var/www/html/feed
+    working_dir: /var/www/html/
     restart: always
     command: php artisan queue:work
     depends_on:
       - php_feed
     volumes:
-      - ./src/feed:/var/www/html/feed
+      - ./src/feed/:/var/www/html/
     # entrypoint: php /var/www/html queue:work
+
+  schedule:
+    image: php
+    container_name: sch
+    working_dir: /var/www/html/
+    restart: always
+    command: php artisan queue:work
+    depends_on:
+      - php_feed
+    volumes:
+      - ./src/feed/:/var/www/html/
   
+  nodejs-app:
+    build:
+      context: ./nodejs_app
+      dockerfile: Dockerfile
+    # working_dir: /src
+    # volumes:
+    #   - ./nodejs_app:/usr/src/app
+    ports:
+      - "3030:3000"
+    # networks:
+    #   - laravel-network
+    
+  redis:
+    image: redis:alpine
+    # networks:
+    #   - laravel-network
+
 networks:
   host:
     external: true
