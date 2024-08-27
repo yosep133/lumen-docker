@@ -1,0 +1,1 @@
+mix.js('resource/assets/js/laravel-echo-setup.js','public/js');

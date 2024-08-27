@@ -5,24 +5,44 @@ services:
     build: ./nginx
     command: nginx -g "daemon off;"
     links:
-      - php
+      - php_feed
+      - php_itms
     ports:
       - "8083:80"
+      - "8081:81"
     volumes:
       - ./nginx/logs:/var/log/nginx
       - ./src:/var/www/html
     # extra_hosts:
     #   - "host.docker.internal:127.0.0.1"
 
-  php:
-    container_name: php
+  # php:
+  #   container_name: php
+  #   build: ./php
+  #   ports:
+  #     - "9000:9000"
+  #   volumes:
+  #     - ./src/:/var/www/html
+  #   working_dir: /var/www/html
+    
+  php_itms :
+    container_name: php_itms
     build: ./php
     ports:
-      - "9000:9000"
+      - "9002:9000"
     volumes:
-      - ./src/:/var/www/html
-    working_dir: /var/www/html
-    
+      - ./src/itms/:/var/www/html/itms
+    working_dir: /var/www/html/itms
+  
+  php_feed:
+    container_name: php_feed
+    build: ./php
+    ports:
+      - "9001:9000"
+    volumes:
+      - ./src/feed/:/var/www/html/feed
+    working_dir: /var/www/html/feed
+
   mysql:
     image: mysql:8.0.26
     container_name: mysql
@@ -59,13 +79,13 @@ services:
   queue:
     image: php
     container_name: queue
-    working_dir: /var/www/html
+    working_dir: /var/www/html/feed
     restart: always
     command: php artisan queue:work
     depends_on:
-      - php
+      - php_feed
     volumes:
-      - ./src:/var/www/html
+      - ./src/feed:/var/www/html/feed
     # entrypoint: php /var/www/html queue:work
   
 networks:

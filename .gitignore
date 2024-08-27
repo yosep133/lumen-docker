@@ -1,4 +1,3 @@
-/src/*
 /nginx/logs/*
 /mysql/*
 !/mysql/setup.sh
