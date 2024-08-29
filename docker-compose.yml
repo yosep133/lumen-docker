@@ -46,9 +46,10 @@ services:
     # command: composer update && install
 
   mysql:
-    image: mysql:8.0.26
+    image: mysql:latest
     container_name: mysql
     restart: unless-stopped
+    # build: ./mysql
     tty: true
     ports:
       - "6609:3306"
@@ -101,22 +102,22 @@ services:
     volumes:
       - ./src/feed/:/var/www/html/
   
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
   nodejs-app:
+    container_name: nodejs
     build:
       context: ./nodejs_app
       dockerfile: Dockerfile
     # working_dir: /src
-    # volumes:
-    #   - ./nodejs_app:/usr/src/app
+    volumes:
+      - ./nodejs_app/:/src
     ports:
       - "3030:3000"
-    # networks:
-    #   - laravel-network
     
-  redis:
-    image: redis:alpine
-    # networks:
-    #   - laravel-network
 
 networks:
   host:

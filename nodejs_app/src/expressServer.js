@@ -1,4 +1,8 @@
 var app = require('express')();
+// var cors = require('cors');
+
+// app.use(cors());
+// app.options('/*',cors());
 var server = require('http').Server(app);
 var io = require('socket.io')(server,{
     cors: {
@@ -17,7 +21,8 @@ server.listen(3000);
 io.on('connection',function (socket) {
     console.log("client connected ",socket.id);   
     var redisClient = redis.createClient({
-        url: 'redis://redis:6379' 
+        host: 'host.docker.internal',
+        port: 6379
       });
     redisClient.subscribe('create:blog');
 
@@ -33,7 +38,8 @@ io.on('connection',function (socket) {
 
 (async() => {
     const client = redis.createClient({
-        url: 'redis://redis:6379' 
+        host: 'host.docker.internal',
+        port: 6379
       });
     const subscribe = client.duplicate();
 
