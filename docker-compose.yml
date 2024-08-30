@@ -80,7 +80,7 @@ services:
       - "8085:80"
   
   queue:
-    image: php
+    image: lumen-docker-php_itms
     container_name: queue
     working_dir: /var/www/html/
     restart: always
@@ -92,7 +92,7 @@ services:
     # entrypoint: php /var/www/html queue:work
 
   schedule:
-    image: php
+    image: lumen-docker-php_itms
     container_name: sch
     working_dir: /var/www/html/
     restart: always
