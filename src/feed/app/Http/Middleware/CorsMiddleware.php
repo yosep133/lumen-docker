@@ -8,7 +8,7 @@ class CorsMiddleware
     public function handle($request, Closure $next)
     {
         $headers = [
-            'Access-Control-Allow-Origin'      => 'http://localhost:8000',
+            'Access-Control-Allow-Origin'      => '*',
             'Access-Control-Allow-Methods'     => 'POST, GET, OPTIONS, PUT, DELETE',
             'Access-Control-Allow-Credentials' => 'true',
             'Access-Control-Allow-Headers'     => 'Authorization, x-csrf-token'
