@@ -1,4 +1,4 @@
-version: '3.8'
+# version: '3.8'
 services:
   nginx:
     container_name: nginx
@@ -46,10 +46,10 @@ services:
     # command: composer update && install
 
   mysql:
-    image: mysql:latest
+    image: mysql:8.0.34
     container_name: mysql
     restart: unless-stopped
-    # build: ./mysql
+    build: ./mysql
     tty: true
     ports:
       - "6609:3306"
@@ -96,7 +96,7 @@ services:
     container_name: sch
     working_dir: /var/www/html/
     restart: always
-    command: php artisan queue:work
+    # command: php artisan queue:work
     depends_on:
       - php_feed
     volumes:
@@ -105,7 +105,7 @@ services:
   redis:
     image: redis:alpine
     ports:
-      - "6379:6379"
+      - "6380:6379"
 
   nodejs-app:
     container_name: nodejs
