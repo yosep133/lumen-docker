@@ -47,12 +47,9 @@ io.on('connection',function (socket) {
 
     await subscribe.subscribe('create:blog',(message)=>{
         console.log(message);
-        const event = JSON.parse(message);
+        // const event = JSON.parse(message);
         io.emit('new-message',
-            JSON.stringify(event.data)
-        );
-        io.emit('create:blog',
-            event.data.title
+            message
         );
     });
 })();

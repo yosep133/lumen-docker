@@ -1,4 +1,5 @@
 var app = require('express')();
+const log = require('node-file-logger');
 var server = require('http').Server(app);
 var io = require('socket.io')(server,{
     cors: {
@@ -40,13 +41,11 @@ io.on('connection',function (socket) {
     await subscribe.connect();
 
     await subscribe.subscribe('create:blog',(message)=>{
-        console.log(message);
+        // log.Info(message);
         const event = JSON.parse(message);
+        log.Info(event.data);
         io.emit('new-message',
-            JSON.stringify(event.data)
-        );
-        io.emit('create:blog',
-            event.data.title
+          JSON.stringify(event.data)
         );
     });
 })();
