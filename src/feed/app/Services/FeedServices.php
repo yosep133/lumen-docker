@@ -27,7 +27,7 @@ class FeedServices
     {
         $varDate = $this->varDate($request->mydate);
         // lock button process 
-        $this->startProgress();
+        $this->startProgress($varDate);
         $this->porcessSatu($request); $this->detailProgress('1',$varDate);//daily transaction 
         $this->porcessDua($request); $this->detailProgress('2',$varDate);//monthly transaction
         $this->processDailyTrans($request); $this->detailProgress('3',$varDate);
@@ -52,6 +52,19 @@ class FeedServices
         return [
                 'tglsatu'=> $tglSatu, 'tgl'=>$tgl ,'bln'=>$bln ,'thn'=>$thn, 'tglmysql'=>$tglmysql 
         ];
+    }
+
+    function isHoliday($date){
+        
+        $test = DB::connection('oracle')
+                ->table('MC302C12')
+                ->select('THE_DATE')
+                // ->where('THE_DATE','=','TO_DATE(\''.$date.'\',\'YYYY-MM-DD\')' )
+                ->whereRaw('trunc(THE_DATE) = TO_DATE(\''.$date.'\',\'YYYY-MM-DD\')')
+                ->exists()
+                // ->get()
+                ;
+        return !$test;
     }
 
     function porcessSatu(Request $request){
@@ -99,13 +112,33 @@ class FeedServices
                     ;
         // echo ' subQCustomer '.$sSPM->count()>0?$accAcademic->push($sSPM)->implode(','):$accAcademic->implode(',');
 
+        // if ($accAcademic->count()>1000) {
+        //     $rawQuery = '(ACCT_NO not in ('.($sSPM->count()>0?$accAcademic->slice(0,500)->push($sSPM)->implode(','):$accAcademic->slice(0,500)->implode(',')).')
+        //                 OR ACCT_NO not in ('.($sSPM->count()>0?$accAcademic->slice(500,$accAcademic->count())->push($sSPM)->implode(','):$accAcademic->slice(500,$accAcademic->count())->implode(',')).')
+        //                 )';
+        //     $rawAcademic='(ACCT_NO IN ('.$accAcademic->slice(0,500)->implode(',').') 
+        //                 OR ACCT_NO IN ('.$accAcademic->slice(500,$accAcademic->count())->implode(',').') 
+        //                 )';
+        // } else {
+        //     $rawQuery = 'ACCT_NO not in ('.($sSPM->count()>0?$accAcademic->push($sSPM)->implode(','):$accAcademic->implode(',')).')';
+        //     $rawAcademic='(ACCT_NO IN ('.$accAcademic->slice(0,500)->implode(',').')';
+        // }
+        // echo   ' ##spm'. $sSPM->count(). ' accacademic '.$accAcademic->count() .' ';
         if ($accAcademic->count()>1000) {
-            $rawQuery = '(ACCT_NO not in ('.($sSPM->count()>0?$accAcademic->slice(0,500)->push($sSPM)->implode(','):$accAcademic->slice(0,500)->implode(',')).')
-                        OR ACCT_NO not in ('.($sSPM->count()>0?$accAcademic->slice(500,$accAcademic->count())->push($sSPM)->implode(','):$accAcademic->slice(500,$accAcademic->count())->implode(',')).')
-                        )';
-            $rawAcademic='(ACCT_NO IN ('.$accAcademic->slice(0,500)->implode(',').') 
-                        OR ACCT_NO IN ('.$accAcademic->slice(500,$accAcademic->count())->implode(',').') 
-                        )';
+            $rawQuery = '(ACCT_NO not in ('.($sSPM->count()>0?$accAcademic->slice(0,500)->push($sSPM)->implode(','):$accAcademic->slice(0,500)->implode(',')).')';
+            $rawAcademic='(ACCT_NO IN ('.$accAcademic->slice(0,500)->implode(',').') ';
+            $min = 500;
+            $max = 500;
+            while ($max <= $accAcademic->count()) {
+                $max = $max+495; 
+                // echo ' min '.$min . ' max '.$max;
+                $rawQuery = $rawQuery.'OR ACCT_NO not in ('.($sSPM->count()>0?$accAcademic->slice(500,$accAcademic->count())->push($sSPM)->implode(','):$accAcademic->slice($min,500)->implode(',')).')';
+                $rawAcademic= $rawAcademic.' OR ACCT_NO IN ('.$accAcademic->slice($min,500)->implode(',').') ';
+                $min = $min + 500;   
+                // echo $rawQuery.' -- ';     
+            }
+            $rawQuery = $rawQuery.')';
+            $rawAcademic= $rawAcademic.')';
         } else {
             $rawQuery = 'ACCT_NO not in ('.($sSPM->count()>0?$accAcademic->push($sSPM)->implode(','):$accAcademic->implode(',')).')';
             $rawAcademic='(ACCT_NO IN ('.$accAcademic->slice(0,500)->implode(',').')';
@@ -124,6 +157,7 @@ class FeedServices
                             ->join('MA001A02','LOGIN_ID','=','CUST_ID','inner')
                             ->whereBetween(DB::raw('TRUNC(LOGIN_DATE)'),[$tglSatu,$tgl])
                             ->where(DB::raw('TRIM(USER_TP)'),'=','0')
+                            ->whereIn(DB::raw('TRIM(MDIA_TP)'),['01','03'])
                             ->whereRaw($rawQuery)
                             ->groupBy(DB::raw('TRUNC(LOGIN_DATE)'))
                             // ->get()
@@ -319,17 +353,37 @@ class FeedServices
         ];
         $this->loadingProgress($param);
         
+        // if ($accAcademic->count()>1000) {
+        //     $rawQuery = '(ACCT_NO not in ('.($sSPM->count()>0?$accAcademic->slice(0,500)->push($sSPM)->implode(','):$accAcademic->slice(0,500)->implode(',')).')
+        //                 OR ACCT_NO not in ('.($sSPM->count()>0?$accAcademic->slice(500,$accAcademic->count())->push($sSPM)->implode(','):$accAcademic->slice(500,$accAcademic->count())->implode(',')).')
+        //                 )';
+        //     $rawAcademic='(ACCT_NO IN ('.$accAcademic->slice(0,500)->implode(',').') 
+        //                 OR ACCT_NO IN ('.$accAcademic->slice(500,$accAcademic->count())->implode(',').') 
+        //                 )';
+        // } else {
+        //     $rawQuery = 'ACCT_NO not in ('.($sSPM->count()>0?$accAcademic->push($sSPM)->implode(','):$accAcademic->implode(',')).')';
+        //     $rawAcademic='(ACCT_NO IN ('.$accAcademic->slice(0,500)->implode(',').')';
+        // }
+        
         if ($accAcademic->count()>1000) {
-            $rawQuery = '(ACCT_NO not in ('.($sSPM->count()>0?$accAcademic->slice(0,500)->push($sSPM)->implode(','):$accAcademic->slice(0,500)->implode(',')).')
-                        OR ACCT_NO not in ('.($sSPM->count()>0?$accAcademic->slice(500,$accAcademic->count())->push($sSPM)->implode(','):$accAcademic->slice(500,$accAcademic->count())->implode(',')).')
-                        )';
-            $rawAcademic='(ACCT_NO IN ('.$accAcademic->slice(0,500)->implode(',').') 
-                        OR ACCT_NO IN ('.$accAcademic->slice(500,$accAcademic->count())->implode(',').') 
-                        )';
+            $rawQuery = '(ACCT_NO not in ('.($sSPM->count()>0?$accAcademic->slice(0,500)->push($sSPM)->implode(','):$accAcademic->slice(0,500)->implode(',')).')';
+            $rawAcademic='(ACCT_NO IN ('.$accAcademic->slice(0,500)->implode(',').') ';
+            $min = 500;
+            $max = 500;
+            while ($max <= $accAcademic->count()) {
+                $max = $max+495; echo ' min '.$min . ' max '.$max;
+                $rawQuery = $rawQuery.'OR ACCT_NO not in ('.($sSPM->count()>0?$accAcademic->slice(500,$accAcademic->count())->push($sSPM)->implode(','):$accAcademic->slice($min,500)->implode(',')).')';
+                $rawAcademic= $rawAcademic.' OR ACCT_NO IN ('.$accAcademic->slice($min,500)->implode(',').') ';
+                $min = $min + 500;   
+                // echo $rawQuery.' -- ';     
+            }
+            $rawQuery = $rawQuery.')';
+            $rawAcademic= $rawAcademic.')';
         } else {
             $rawQuery = 'ACCT_NO not in ('.($sSPM->count()>0?$accAcademic->push($sSPM)->implode(','):$accAcademic->implode(',')).')';
             $rawAcademic='(ACCT_NO IN ('.$accAcademic->slice(0,500)->implode(',').')';
         }
+
         
         $subQCustomer   = DB::connection('oracle')
                             ->table('CUST_CONN_LOG')
@@ -337,7 +391,8 @@ class FeedServices
                             ->join('MA001A02','LOGIN_ID','=','CUST_ID','inner')
                             ->whereBetween('LOGIN_DATE',[$tglSatu,$tgl])
                             ->where(DB::raw('TRIM(USER_TP)'),'=','0')
-                            ->where(DB::raw('TRIM(MDIA_TP)'),'=','01')
+                            // ->where(DB::raw('TRIM(MDIA_TP)'),'=','01')
+                            ->whereIn(DB::raw('TRIM(MDIA_TP)'),['01','03'])
                             ->whereRaw($rawQuery)
                             // ->get()
                             ;
@@ -374,7 +429,8 @@ class FeedServices
                             ->selectRaw(' COUNT(DISTINCT(CUST_ID)) CNT')
                             ->join('MA001A02','LOGIN_ID','=','CUST_ID','inner')
                             ->whereBetween('LOGIN_DATE',[$tglSatu,$tgl])
-                            ->where(DB::raw('TRIM(MDIA_TP)'),'=','01')
+                            ->whereIn(DB::raw('TRIM(MDIA_TP)'),['01','03'])
+                            // ->where(DB::raw('TRIM(MDIA_TP)'),'=','01')
                             ->whereRaw('ACCT_NO in ('.($sSPM->count()>0? $sSPM->implode(','):'\'\'').')' )
                             // ->get()
                             ;
@@ -522,13 +578,23 @@ class FeedServices
                         ->groupBy('bran_no')
                         ->orderBy('bran_no');
 
+        // $subQLogin = DB::connection('oracle')
+        //                 ->table('hloginlog','a')
+        //                 ->selectRaw('nvl(b.bran_no,\'000\') Branch, count(distinct a.login_id) login_cnt ')
+        //                 ->join('MA001A03 b','a.acct_no','=','b.acct_no')
+        //                 ->where('a.the_date','=',$varDate['tglmysql'])
+        //                 ->where('type','=','HTS')
+        //                 ->where('connect_flag','=','1')
+        //                 ->groupBy('b.bran_no')
+        //                 ->orderBy('b.bran_no');
+
         $subQLogin = DB::connection('oracle')
-                        ->table('hloginlog','a')
-                        ->selectRaw('nvl(b.bran_no,\'000\') Branch, count(distinct a.login_id) login_cnt ')
-                        ->join('MA001A03 b','a.acct_no','=','b.acct_no')
-                        ->where('a.the_date','=',$varDate['tglmysql'])
-                        ->where('type','=','HTS')
-                        ->where('connect_flag','=','1')
+                        ->table('CUST_CONN_LOG','a')
+                        ->selectRaw('nvl(b.bran_no,\'000\') Branch, count(distinct a.cust_id) login_cnt ')
+                        ->join('MA001A02 c','a.cust_id','=','c.login_id')
+                        ->join('MA001A03 b','c.acct_no','=','b.acct_no')
+                        ->whereRaw('trunc(a.login_date) = To_date(\''.$varDate['tglmysql'].'\', \'YYYY-MM-DD\')')
+                        ->where('mdia_tp','=','01')
                         ->groupBy('b.bran_no')
                         ->orderBy('b.bran_no');
 
@@ -1021,29 +1087,29 @@ class FeedServices
             'date' => $varDate['tglmysql']
         ];
         $this->loadingProgress($param);
+        
         // cek last insert date 
-        $bl = true;
-        while ($bl) { 
-            # code...
-            // if backdate not holliday 
-            $isHoliday = 
-            $bl = false;
-        }
+        $bl = 0;
+        for ($i=0; $bl<1; $i++) { 
+            $date = $varDate['tgl']->subDay(1)->format('Y-m-d');
+            // check holiday
+            $bl = $this->isHoliday($date);
+            echo $date.' - '.$bl.'|';
         $komisi = DB::connection('sqlsrv')
                   ->table('invoice')
                   ->selectRaw('no_cust, name, sum(comm) as komisi ')
                   ->join('masteracc','no_cif','=','no_cust','inner')
-                  ->where('dt_inv','=',$varDate['tgl']->format('Y-m-d'))
+                    ->where('dt_inv','=',$date)
                   ->groupByRaw('name,no_cust')
                   ;
                   
-        collect($komisi->get())->each(function($row) use ($varDate){
+            collect($komisi->get())->each(function($row) use ($date){
 
             $upsert = DB::connection('mysql')
                       ->table('client_grade')
                       ->updateOrInsert(
                         [
-                            'date_id'=>$varDate['tgl']->format('Y-m-d'),'acct_no'=>$row->no_cust
+                                'date_id'=>$date,'acct_no'=>$row->no_cust
                         ],[
                             'acct_name'=>$row->name,
                             'commission'=>$row->komisi,
@@ -1057,7 +1123,7 @@ class FeedServices
                     ->table('journal')
                     ->selectRaw('no_soa, name, dbamt')
                     ->join('masteracc','no_cif','=','no_soa','inner')
-                    ->where('jrn_dt','=',$varDate['tgl']->format('Y-m-d'))
+                        ->where('jrn_dt','=',$date)
                     ->where('divisi','=','Z')
                     ->where('no_soa','<>','01')
                     ->whereRaw('isnumeric(no_soa)>0')
@@ -1068,30 +1134,34 @@ class FeedServices
         $this->loadingProgress($param);
         
         $finishValue = $interest->get()->count();
+            echo $date.' finish value - ' .$finishValue.', ';
         if ($finishValue==0) {            
+                echo 'true '.$finishValue;
             $param = [
                 'procName'=> '9',
                 'finishValue' => 100,
-                'procValue'=> 100
+                'procValue'=> 100,
+                'date' => $varDate['tglmysql']
             ];
             $this->loadingProgress($param);
         }
         else {
-            echo 'tgl backdate '. $varDate['tgl']->format('Y-m-d');
+                // echo 'tgl backdate '. $date;
             $iteration = 70/$finishValue;
             $this->count = 30;
+                $date2 = $varDate['tglmysql'];
 
-            collect($interest->get())->each(function($row) use ($varDate,$iteration){
-                $client_grade = DB::connection('mysql')
+                collect($interest->get())->each(function($row) use ($date,$iteration,$date2){
+                    $client_grade = DB::connection('mysql')
                                 ->table('client_grade')
-                                ->where('date_id','=',$varDate['tgl']->format('Y-m-d'))
+                                    ->where('date_id','=',$date)
                                 ->where('acct_no','=',$row->no_soa)
                                 ->first()
                                 ;
                 if ($client_grade != null) {
                     $update = DB::connection('mysql')
                             ->table('client_grade')
-                            ->where('date_id','=',$varDate['tgl']->format('Y-m-d'))
+                                ->where('date_id','=',$date)
                             ->where('acct_no','=',$row->no_soa)
                             ->update(['acct_name'=>$row->name,
                             'interest'=>$row->dbamt]);
@@ -1099,7 +1169,7 @@ class FeedServices
                     $insert = DB::connection('mysql')
                             ->table('client_grade')
                             ->insert([
-                                'date_id'=>$varDate['tgl']->format('Y-m-d'),
+                                    'date_id'=>$date,
                                 'acct_no'=>$row->no_soa,                            
                                 'acct_name'=>$row->name,
                                 'commission'=>0,
@@ -1114,10 +1184,11 @@ class FeedServices
                     'procName'=> '9',
                     'finishValue' => 100,
                     'procValue'=> round($this->count),
-                    'date' => $varDate['tglmysql']
+                        'date' => $date2
                 ];
                 $this->loadingProgress($param);
             });
+            }  
         }  
 
     }
@@ -1192,9 +1263,10 @@ class FeedServices
         Log::info(' '.$procName.' '.$percent);
     }
 
-    function startProgress(){
+    function startProgress($tgl){
         $param = [
-            'procName'=> 'startProgress'
+            'procName'=> 'startProgress',
+            'date'=>$tgl['tglmysql']
         ];
         //simpan ke feed_process_detail 
         Event(new \App\Events\SendMessage($param));
@@ -1207,7 +1279,10 @@ class FeedServices
                     ->insert(['process_date'=>  $tgl['tglmysql'],
                     'status'=> '1']);
 
-        $param = ['procName'=> 'endProgress'];
+        $param = [
+            'procName'=> 'endProgress',
+            'date'=>$tgl['tglmysql']
+        ];
         Event(new \App\Events\SendMessage($param));
     }
 

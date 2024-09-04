@@ -1,6 +1,7 @@
 /nginx/logs/*
 /mysql/var/*
 /nodejs_app/node_modules/
+/nodejs_app/logs/*
 !/mysql/setup.sh
 !/mysql/setup.sql
 !/mysql/dfeedservice.sql
