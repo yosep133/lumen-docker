@@ -25,14 +25,14 @@ class FeedController extends Controller{
     public function allProcess(Request $request){
         // $queue = Queue::push('AllProcessJob', $this->feedService, $request);
         // echo 'test '.$request->mydate;
-        // $varDate = $this->feedService->varDate($request->mydate);
+        $varDate = $this->feedService->varDate($request->mydate);
         $args =[
             "request"=>$request->all(),
             "feedservice"=>$this->feedService
         ];
         dispatch(new AllProcessJob($this->feedService,$request->all()));
-        // return response()
-        // ->json(['processAlert' => 'Virat Gandhi', 'state' => $varDate['tglmysql']]);
+        return response()
+        ->json(['processAlert' => 'Start', 'state' => $varDate['tglmysql']]);
     }
     //process satu
     public function dailyFeedProcess(Request $request)
